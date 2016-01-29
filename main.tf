@@ -21,7 +21,6 @@ resource "template_file" "cloud-config-follower" {
     }
 }
 
-
 resource "digitalocean_droplet" "core_leader" {
     count = "${var.leader_count}"
 
@@ -124,7 +123,7 @@ CMD
       inline = <<EOF
 set -e
 
-wget -qO- https://github.com/aybabtme/temple/releases/download/0.2/temple_linux.tar.gz | tar xvz
+wget -qO- https://github.com/aybabtme/temple/releases/download/0.2.1/temple_linux.tar.gz | tar xvz
 
 ./untilitworks -retry e -exp.factor 1.5 -max 60s etcdctl cluster-health
 sudo ./temple tree -dst / -src /tmp/kube-master \
