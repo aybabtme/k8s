@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+set_quorum_size() {
+    read -p "How many leaders in etcd quorum? " leader_count
+    leader_count=${leader_count:-5}
+}
+
+set_cluster_size() {
+    read -p "How many workers in cluster? " follower_count
+    follower_count=${follower_count:-10}
+}
+
+set_ssh_key_id() {
+    key_id=$(curl \
+        -s -X GET \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $DIGITALOCEAN_TOKEN" \
+        "https://api.digitalocean.com/v2/account/keys" \
+        | jq '.ssh_keys[0] | .id')
+}
+
+set_discovery_url() {
+    discovery_url=$(curl -w "\n" "https://discovery.etcd.io/new?size=$leader_count")
+}
+
+create_cluster() {
+    set_quorum_size
+    set_cluster_size
+    set_ssh_key_id
+    set_discovery_url
+
+    terraform apply \
+        -var "ssh_keys=$key_id" \
+        -var "leader_count=$leader_count" \
+        -var "follower_count=$follower_count" \
+        -var "discovery_url=$discovery_url"
+}
+
+destroy_cluster() {
+    terraform destroy --force \
+        -var "ssh_keys=derp" \
+        -var "discovery_url=derp"
+}
+
+case $1 in
+    create)
+    set -e -u
+    time create_cluster
+    ;;
+
+    destroy)
+    set -e -u
+    time destroy_cluster
+    ;;
+
+    *)
+    echo "usage: ./doit!.sh (create|destroy)"
+    exit 1
+    ;;
+esac
