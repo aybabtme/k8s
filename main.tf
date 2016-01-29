@@ -13,6 +13,14 @@ resource "template_file" "cloud-config" {
     }
 }
 
+resource "template_file" "cloud-config-follower" {
+    template = "${file("./cloud-config-follower.tpl")}"
+    vars {
+        discovery_url = "${var.discovery_url}"
+        region = "${var.region}"
+    }
+}
+
 
 resource "digitalocean_droplet" "core_leader" {
     count = "${var.leader_count}"
@@ -43,7 +51,7 @@ resource "digitalocean_droplet" "k8s_leader" {
     region             = "${var.region}"
     size               = "${var.leader_size}"
     ssh_keys           = ["${split(",", var.ssh_keys)}"]
-    user_data          = "${template_file.cloud-config.rendered}"
+    user_data          = "${template_file.cloud-config-follower.rendered}"
     private_networking = true
 
     connection { user = "core" }
